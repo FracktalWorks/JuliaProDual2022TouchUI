@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-'''
+"""
 *************************************************************************
  *
  * Fracktal Works
@@ -10,15 +10,16 @@
  *
  * Licence: AGPLv3
 *************************************************************************
-'''
-import mainGUI_pro_dual_abl
+"""
+Development = False   # set to True if running on any system other than RaspberryPi
+
+import mainGUI
 import keyboard
 import dialog
 import styles
 import asset_bundle
-import logging
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 import time
 import sys
 import subprocess
@@ -28,7 +29,7 @@ from datetime import datetime
 # from functools import partial
 import qrcode
 # pip install websocket-client
-import websocket
+import websocket #https://pypi.org/project/websocket-client/
 import json
 import random
 import uuid
@@ -37,13 +38,13 @@ import os
 import io
 import requests
 import re
-
-import RPi.GPIO as GPIO
+import logging
 from collections import OrderedDict
 
-
-GPIO.setmode(GPIO.BCM)  # Use the board numbering scheme
-GPIO.setwarnings(False)  # Disable GPIO warnings
+if not Development:
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)  # Use the board numbering scheme
+    GPIO.setwarnings(False)  # Disable GPIO warnings H
 
 # TODO:
 '''
@@ -145,25 +146,20 @@ def run_async(func):
 def getIP(interface):
     try:
         scan_result = \
-            subprocess.Popen("ifconfig | grep " + interface + " -A 1", stdout=subprocess.PIPE, shell=True).communicate()[0]
+            (subprocess.Popen("ifconfig | grep " + interface + " -A 1", stdout=subprocess.PIPE, shell=True).communicate()[0]).decode("utf-8")
         # Processing STDOUT into a dictionary that later will be converted to a json file later
-        # scan_result = scan_result.split(
-        #     '\n')  # each ssid and pass from an item in a list ([ssid pass,ssid paas])
-        # scan_result = [s.strip() for s in scan_result]
-        # # scan_result = [s.strip('"') for s in scan_result]
-        # scan_result = filter(None, scan_result)
-        # return scan_result[1][scan_result[1].index('inet addr:') + 10: 23]
-        rInetAddr = r"inet addr:\s*([\d.]+)"
+        rInetAddr = r"inet\s*([\d.]+)"
+        rInet6Addr = r"inet6"
+        mt6Ip = re.search(rInet6Addr, scan_result)
         mtIp = re.search(rInetAddr, scan_result)
-        if mtIp and len(mtIp.groups()) == 1:
+        if not(mt6Ip) and mtIp and len(mtIp.groups()) == 1:
             return str(mtIp.group(1))
     except:
         return None
 
-
 def getMac(interface):
     try:
-        mac = subprocess.Popen(" cat /sys/class/net/" + interface + "/address", 
+        mac = subprocess.Popen(" cat /sys/class/net/" + interface + "/address",
                                stdout=subprocess.PIPE, shell=True).communicate()[0].rstrip()
         if not mac:
             return "Not found"
@@ -174,11 +170,11 @@ def getMac(interface):
 
 def getWifiAp():
     try:
-        ap = subprocess.Popen("iwgetid -r", 
+        ap = subprocess.Popen("iwgetid -r",
                               stdout=subprocess.PIPE, shell=True).communicate()[0].rstrip()
         if not ap:
             return "Not connected"
-        return ap
+        return ap.decode("utf-8")
     except:
         return "Error"
 
@@ -188,26 +184,29 @@ def getHostname():
         hostname = subprocess.Popen("cat /etc/hostname", stdout=subprocess.PIPE, shell=True).communicate()[0].rstrip()
         if not hostname:
             return "Not connected"
-        return hostname + ".local"
+        return hostname.decode("utf-8")  + ".local"
     except:
         return "Error"
 
-
 class BuzzerFeedback(object):
     def __init__(self, buzzerPin):
-        GPIO.cleanup()
-        self.buzzerPin = buzzerPin
-        GPIO.setup(self.buzzerPin, GPIO.OUT)
-        GPIO.output(self.buzzerPin, GPIO.LOW)
+        if not Development:
+            GPIO.cleanup()
+            self.buzzerPin = buzzerPin
+            GPIO.setup(self.buzzerPin, GPIO.OUT)
+            GPIO.output(self.buzzerPin, GPIO.LOW)
+        pass
 
     @run_async
     def buzz(self):
-        GPIO.output(self.buzzerPin, (GPIO.HIGH))
-        time.sleep(0.005)
-        GPIO.output(self.buzzerPin, GPIO.LOW)
-
+        if not Development:
+            GPIO.output(self.buzzerPin, (GPIO.HIGH))
+            time.sleep(0.005)
+            GPIO.output(self.buzzerPin, GPIO.LOW)
+        pass
 
 buzzer = BuzzerFeedback(12)
+
 
 '''
 To get the buzzer to beep on button press
@@ -267,7 +266,7 @@ class ClickableLineEdit(QtGui.QLineEdit):
         self.emit(QtCore.SIGNAL("clicked()"))
 
 
-class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
+class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
     '''
     Main GUI Workhorse, all slots and events defined within
     The main implementation class that inherits methods, variables etc from mainGUI_pro_dual_abl.py and QMainWindow
@@ -309,28 +308,27 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         This method gets called when an object of type MainUIClass is defined
         '''
         super(MainUiClass, self).__init__()
-        formatter = logging.Formatter("%(asctime)s %(message)s")
-        self._logger = logging.getLogger("TouchUI")
-        file_handler = logging.FileHandler("/home/pi/ui.log")
-        file_handler.setFormatter(formatter)
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        # file_handler.setLevel(logging.DEBUG)
-        self._logger.addHandler(file_handler)
-        self._logger.addHandler(stream_handler)
-
-
-        # Calls setupUi that sets up layout and geometry of all UI elements
+        if not Development:
+            formatter = logging.Formatter("%(asctime)s %(message)s")
+            self._logger = logging.getLogger("TouchUI")
+            file_handler = logging.FileHandler("/home/pi/ui.log")
+            file_handler.setFormatter(formatter)
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(formatter)
+            file_handler.setLevel(logging.DEBUG)
+            self._logger.addHandler(file_handler)
+            self._logger.addHandler(stream_handler)
         try:
-            self.__packager = asset_bundle.AssetBundle()
-            self.__packager.save_time()
-            self.__timelapse_enabled = self.__packager.read_match() if self.__packager.time_delta() else True
-            self.__timelapse_started = not self.__packager.time_delta()
+            # if not Development:
+                # self.__packager = asset_bundle.AssetBundle()
+                # self.__packager.save_time()
+                # self.__timelapse_enabled = self.__packager.read_match() if self.__packager.time_delta() else True
+                # self.__timelapse_started = not self.__packager.time_delta()
 
-            self._logger.info("Hardware ID = {}, Unlocked = {}".format(self.__packager.hc(), self.__timelapse_enabled))
-            print("Hardware ID = {}, Unlocked = {}".format(self.__packager.hc(), self.__timelapse_enabled))
-            self._logger.info("File time = {}, Demo = {}".format(self.__packager.read_time(), self.__timelapse_started))
-            print("File time = {}, Demo = {}".format(self.__packager.read_time(), self.__timelapse_started))
+                # self._logger.info("Hardware ID = {}, Unlocked = {}".format(self.__packager.hc(), self.__timelapse_enabled))
+                # print("Hardware ID = {}, Unlocked = {}".format(self.__packager.hc(), self.__timelapse_enabled))
+                # self._logger.info("File time = {}, Demo = {}".format(self.__packager.read_time(), self.__timelapse_started))
+                # print("File time = {}, Demo = {}".format(self.__packager.read_time(), self.__timelapse_started))
             self.setupUi(self)
             self.stackedWidget.setCurrentWidget(self.loadingPage)
             self.setStep(10)
@@ -339,14 +337,16 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
             self.setHomeOffsetBool = False
             self.currentImage = None
             self.currentFile = None
-            self.sanityCheck = ThreadSanityCheck(self._logger, virtual=not self.__timelapse_enabled)
+            # if not Development:
+            #     self.sanityCheck = ThreadSanityCheck(self._logger, virtual=not self.__timelapse_enabled)
+            # else:
+            self.sanityCheck = ThreadSanityCheck(virtual=False)
             self.sanityCheck.start()
-            self.connect(self.sanityCheck, QtCore.SIGNAL('LOADED'), self.proceed)
-            self.connect(self.sanityCheck, QtCore.SIGNAL('STARTUP_ERROR'), self.handleStartupError)
-            self.setNewToolZOffsetFromCurrentZBool = False
-            self.setActiveExtruder(0)
+            self.sanityCheck.loaded_signal.connect(self.proceed)
+            self.sanityCheck.startup_error_signal.connect(self.handleStartupError)
 
-            for spinbox in self.findChildren(QtGui.QSpinBox):
+
+            for spinbox in self.findChildren(QtWidgets.QSpinBox):
                 lineEdit = spinbox.lineEdit()
                 lineEdit.setReadOnly(True)
                 lineEdit.setDisabled(True)
@@ -354,9 +354,9 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
                 p.setColor(QtGui.QPalette.Highlight, QtGui.QColor(40, 40, 40))
                 lineEdit.setPalette(p)
 
+
         except Exception as e:
-            self._logger.error(e.message)
-        # Thread to get the get the state of the Printer as well as the temperature
+            self._logger.error(e)
 
     def proceed(self):
         '''
@@ -367,10 +367,13 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         self.QtSocket.start()
         self.setActions()
         self.movie.stop()
-        self.stackedWidget.setCurrentWidget(self.pgLock)
-        self.Lock_showLock()
+        if not Development:
+            self.stackedWidget.setCurrentWidget(self.homePage)
+            # self.Lock_showLock()
+            self.setIPStatus()
+        else:
+            self.stackedWidget.setCurrentWidget(self.homePage)
         self.isFilamentSensorInstalled()
-        self.setIPStatus()
 
     def setActions(self):
 
@@ -380,29 +383,25 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
 
         #--Dual Caliberation Addition--
         self.connect(self.QtSocket, QtCore.SIGNAL('SET_Z_TOOL_OFFSET'), self.setZToolOffset)
-
         self.connect(self.QtSocket, QtCore.SIGNAL('Z_PROBE_OFFSET'), self.updateEEPROMProbeOffset)
-        self.connect(self.QtSocket, QtCore.SIGNAL('TEMPERATURES'), self.updateTemperature)
-        self.connect(self.QtSocket, QtCore.SIGNAL('STATUS'), self.updateStatus)
-        self.connect(self.QtSocket, QtCore.SIGNAL('PRINT_STATUS'), self.updatePrintStatus)
-        self.connect(self.QtSocket, QtCore.SIGNAL('UPDATE_STARTED'), self.softwareUpdateProgress)
-        self.connect(self.QtSocket, QtCore.SIGNAL('UPDATE_LOG'), self.softwareUpdateProgressLog)
-        self.connect(self.QtSocket, QtCore.SIGNAL('UPDATE_LOG_RESULT'), self.softwareUpdateResult)
-        self.connect(self.QtSocket, QtCore.SIGNAL('UPDATE_FAILED'), self.updateFailed)
-        self.connect(self.QtSocket, QtCore.SIGNAL('CONNECTED'), self.onServerConnected)
-        self.connect(self.QtSocket, QtCore.SIGNAL('FILAMENT_SENSOR_TRIGGERED'), self.filamentSensorHandler)
-        self.connect(self.QtSocket, QtCore.SIGNAL('FIRMWARE_UPDATER'), self.firmwareUpdateHandler)
+        self.QtSocket.temperatures_signal.connect(self.updateTemperature)
+        self.QtSocket.status_signal.connect(self.updateStatus)
+        self.QtSocket.print_status_signal.connect(self.updatePrintStatus)
+        self.QtSocket.update_started_signal.connect(self.softwareUpdateProgress)
+        self.QtSocket.update_log_signal.connect(self.softwareUpdateProgressLog)
+        self.QtSocket.update_log_result_signal.connect(self.softwareUpdateResult)
+        self.QtSocket.update_failed_signal.connect(self.updateFailed)
+        self.QtSocket.connected_signal.connect(self.onServerConnected)
+        self.QtSocket.filament_sensor_triggered_signal.connect(self.filamentSensorHandler)
+        self.QtSocket.firmware_updater_signal.connect(self.firmwareUpdateHandler)
         self.connect(self.QtSocket, QtCore.SIGNAL('Z_PROBING_FAILED'), self.showProbingFailed)
-        self.connect(self.QtSocket, QtCore.SIGNAL('TOOL_OFFSET'), self.getToolOffset)
+        self.QtSocket.z_home_offset_signal.connect(self.getZHomeOffset)
         self.connect(self.QtSocket, QtCore.SIGNAL('ACTIVE_EXTRUDER'), self.setActiveExtruder)
 
         # Text Input events
-        self.connect(self.wifiPasswordLineEdit, QtCore.SIGNAL("clicked()"),
-                     lambda: self.startKeyboard(self.wifiPasswordLineEdit.setText))
-        self.connect(self.ethStaticIpLineEdit, QtCore.SIGNAL("clicked()"),
-                     lambda: self.ethShowKeyboard(self.ethStaticIpLineEdit))
-        self.connect(self.ethStaticGatewayLineEdit, QtCore.SIGNAL("clicked()"),
-                     lambda: self.ethShowKeyboard(self.ethStaticGatewayLineEdit))
+        self.wifiPasswordLineEdit.clicked_signal.connect(lambda: self.startKeyboard(self.wifiPasswordLineEdit.setText))
+        self.ethStaticIpLineEdit.clicked_signal.connect(lambda: self.ethShowKeyboard(self.ethStaticIpLineEdit))
+        self.ethStaticGatewayLineEdit.clicked_signal.connect(lambda: self.ethShowKeyboard(self.ethStaticGatewayLineEdit))
 
         # Button Events:
 
@@ -587,59 +586,59 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         # Filament sensor toggle
         self.toggleFilamentSensorButton.clicked.connect(self.toggleFilamentSensor)
 
-        # Lock settings
-        self.pgLock_pin.textChanged.connect(self.Lock_onPinInputChanged)
+        # # Lock settings
+        # self.pgLock_pin.textChanged.connect(self.Lock_onPinInputChanged)
+        #
+        # self.pgLock_bt1.clicked.connect(lambda: self.Lock_kbAdd("1"))
+        # self.pgLock_bt2.clicked.connect(lambda: self.Lock_kbAdd("2"))
+        # self.pgLock_bt3.clicked.connect(lambda: self.Lock_kbAdd("3"))
+        # self.pgLock_bt4.clicked.connect(lambda: self.Lock_kbAdd("4"))
+        # self.pgLock_bt5.clicked.connect(lambda: self.Lock_kbAdd("5"))
+        # self.pgLock_bt6.clicked.connect(lambda: self.Lock_kbAdd("6"))
+        # self.pgLock_bt7.clicked.connect(lambda: self.Lock_kbAdd("7"))
+        # self.pgLock_bt8.clicked.connect(lambda: self.Lock_kbAdd("8"))
+        # self.pgLock_bt9.clicked.connect(lambda: self.Lock_kbAdd("9"))
+        # self.pgLock_bt0.clicked.connect(lambda: self.Lock_kbAdd("0"))
+        # self.pgLock_btBackspace.clicked.connect(lambda: self.pgLock_pin.backspace())
+        # self.pgLock_btSubmit.clicked.connect(self.Lock_submitPIN)
 
-        self.pgLock_bt1.clicked.connect(lambda: self.Lock_kbAdd("1"))
-        self.pgLock_bt2.clicked.connect(lambda: self.Lock_kbAdd("2"))
-        self.pgLock_bt3.clicked.connect(lambda: self.Lock_kbAdd("3"))
-        self.pgLock_bt4.clicked.connect(lambda: self.Lock_kbAdd("4"))
-        self.pgLock_bt5.clicked.connect(lambda: self.Lock_kbAdd("5"))
-        self.pgLock_bt6.clicked.connect(lambda: self.Lock_kbAdd("6"))
-        self.pgLock_bt7.clicked.connect(lambda: self.Lock_kbAdd("7"))
-        self.pgLock_bt8.clicked.connect(lambda: self.Lock_kbAdd("8"))
-        self.pgLock_bt9.clicked.connect(lambda: self.Lock_kbAdd("9"))
-        self.pgLock_bt0.clicked.connect(lambda: self.Lock_kbAdd("0"))
-        self.pgLock_btBackspace.clicked.connect(lambda: self.pgLock_pin.backspace())
-        self.pgLock_btSubmit.clicked.connect(self.Lock_submitPIN)
-
-    ''' +++++++++++++++++++++++++Lock Settings+++++++++++++++++++++++++++++++++++ '''
-    def Lock_showLock(self):
-        self.pgLock_HID.setText(str(self.__packager.hc()))
-        self.pgLock_pin.setText("")
-        if not self.__timelapse_enabled:
-            # dialog.WarningOk(self, "Machine locked!")
-            self.stackedWidget.setCurrentWidget(self.pgLock)
-        else:
-            # if self.__timelapse_started:
-            #     dialog.WarningOk(self, "Demo mode!", overlay=True)
-            self.stackedWidget.setCurrentWidget(self.homePage)
-
-    def Lock_kbAdd(self, txt):
-        if len(str(self.pgLock_pin.text())) < 9:
-            self.pgLock_pin.setText(str(self.pgLock_pin.text()) + txt)
-        self.pgLock_pin.setFocus()
-
-    def Lock_onPinInputChanged(self):
-        self.pgLock_btBackspace.setEnabled(len(str(self.pgLock_pin.text())) > 0)
-        self.pgLock_btSubmit.setEnabled(len(str(self.pgLock_pin.text())) > 3)
-
-    def Lock_submitPIN(self):
-        k = -1
-        t = self.pgLock_pin.text()
-        try:
-            k = int(t)
-            if self.__packager.match(k):
-                self.__packager.save(k)
-                # self.__timelapse_enabled = True
-                if dialog.SuccessOk(self, "Machine unlocked!", overlay=True):
-                    self.tellAndReboot()
-                self.stackedWidget.setCurrentWidget(self.homePage)
-            else:
-                dialog.WarningOk(self, "Incorrect unlock code")
-        except Exception as e:
-            dialog.WarningOk(self, "Error while parsing unlock code")
-            print(e.message)
+    # ''' +++++++++++++++++++++++++Lock Settings+++++++++++++++++++++++++++++++++++ '''
+    # def Lock_showLock(self):
+    #     self.pgLock_HID.setText(str(self.__packager.hc()))
+    #     self.pgLock_pin.setText("")
+    #     if not self.__timelapse_enabled:
+    #         # dialog.WarningOk(self, "Machine locked!")
+    #         self.stackedWidget.setCurrentWidget(self.pgLock)
+    #     else:
+    #         # if self.__timelapse_started:
+    #         #     dialog.WarningOk(self, "Demo mode!", overlay=True)
+    #         self.stackedWidget.setCurrentWidget(self.homePage)
+    #
+    # def Lock_kbAdd(self, txt):
+    #     if len(str(self.pgLock_pin.text())) < 9:
+    #         self.pgLock_pin.setText(str(self.pgLock_pin.text()) + txt)
+    #     self.pgLock_pin.setFocus()
+    #
+    # def Lock_onPinInputChanged(self):
+    #     self.pgLock_btBackspace.setEnabled(len(str(self.pgLock_pin.text())) > 0)
+    #     self.pgLock_btSubmit.setEnabled(len(str(self.pgLock_pin.text())) > 3)
+    #
+    # def Lock_submitPIN(self):
+    #     k = -1
+    #     t = self.pgLock_pin.text()
+    #     try:
+    #         k = int(t)
+    #         if self.__packager.match(k):
+    #             self.__packager.save(k)
+    #             # self.__timelapse_enabled = True
+    #             if dialog.SuccessOk(self, "Machine unlocked!", overlay=True):
+    #                 self.tellAndReboot()
+    #             self.stackedWidget.setCurrentWidget(self.homePage)
+    #         else:
+    #             dialog.WarningOk(self, "Incorrect unlock code")
+    #     except Exception as e:
+    #         dialog.WarningOk(self, "Error while parsing unlock code")
+    #         print(e.message)
 
     ''' +++++++++++++++++++++++++Print Restore+++++++++++++++++++++++++++++++++++ '''
 
@@ -669,7 +668,7 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
             else:
                 self.firmwareUpdateCheck()
         except:
-            print "error on Server Connected"
+            print ("error on Server Connected")
             pass
 
     ''' +++++++++++++++++++++++++Filament Sensor++++++++++++++++++++++++++++++++++++++ '''
@@ -704,7 +703,6 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
             return
 
         triggered_extruder0 = False
-        triggered_extruder1 = False
         triggered_door = False
         pause_print = False
 
@@ -713,24 +711,15 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         elif 'extruder0' in data:
             triggered_extruder0 = data["extruder0"] == 0
 
-        if 'filament2' in data:
-            triggered_extruder1 = data["filament2"] == 0
-        elif 'extruder0' in data:
-            triggered_extruder1 = data["extruder1"] == 0
-
         if 'door' in data:
             triggered_door = data["door"] == 0
         if 'pause_print' in data:
             pause_print = data["pause_print"]
 
+        #Update
         if triggered_extruder0 and self.stackedWidget.currentWidget() not in [self.changeFilamentPage, self.changeFilamentProgressPage,
                                   self.changeFilamentExtrudePage, self.changeFilamentRetractPage]:
             if dialog.WarningOk(self, "Filament outage in Extruder 0"):
-                pass
-
-        if triggered_extruder1 and self.stackedWidget.currentWidget() not in [self.changeFilamentPage, self.changeFilamentProgressPage,
-                                  self.changeFilamentExtrudePage, self.changeFilamentRetractPage]:
-            if dialog.WarningOk(self, "Filament outage in Extruder 1"):
                 pass
 
         if triggered_door:
@@ -848,7 +837,8 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         updateAvailable = False
         self.performUpdateButton.setDisabled(True)
 
-        self.updateListWidget.addItem(self.getFirmwareVersion())
+        # Firmware version on the MKS https://github.com/FracktalWorks/OctoPrint-JuliaFirmwareUpdater
+        # self.updateListWidget.addItem(self.getFirmwareVersion())
 
         data = octopiclient.getSoftwareUpdateInfo()
         if data:
@@ -930,31 +920,36 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         wlan0_config_file.truncate()
         ascii_ssid = self.wifiSettingsComboBox.currentText()
         # unicode_ssid = ascii_ssid.decode('string_escape').decode('utf-8')
+        wlan0_config_file.write(u"country=IN\n")
+        wlan0_config_file.write(u"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n")
+        wlan0_config_file.write(u"update_config=1\n")
         wlan0_config_file.write(u"network={\n")
         wlan0_config_file.write(u'ssid="' + str(ascii_ssid) + '"\n')
         if self.hiddenCheckBox.isChecked():
             wlan0_config_file.write(u'scan_ssid=1\n')
+        # wlan0_config_file.write(u"scan_ssid=1\n")
         if str(self.wifiPasswordLineEdit.text()) != "":
             wlan0_config_file.write(u'psk="' + str(self.wifiPasswordLineEdit.text()) + '"\n')
+        # wlan0_config_file.write(u"key_mgmt=WPA-PSK\n")
         wlan0_config_file.write(u'}')
         wlan0_config_file.close()
-        signal = 'WIFI_RECONNECT_RESULT'
-        self.restartWifiThreadObject = ThreadRestartNetworking(ThreadRestartNetworking.WLAN, signal)
+        self.restartWifiThreadObject = ThreadRestartNetworking(ThreadRestartNetworking.WLAN)
+        self.restartWifiThreadObject.signal.connect(self.wifiReconnectResult)
         self.restartWifiThreadObject.start()
-        self.connect(self.restartWifiThreadObject, QtCore.SIGNAL(signal), self.wifiReconnectResult)
         self.wifiMessageBox = dialog.dialog(self,
                                             "Restarting networking, please wait...",
                                             icon="exclamation-mark.png",
-                                            buttons=QtGui.QMessageBox.Cancel)
-        if self.wifiMessageBox.exec_() in {QtGui.QMessageBox.Ok, QtGui.QMessageBox.Cancel}:
+                                            buttons=QtWidgets.QMessageBox.Cancel)
+        if self.wifiMessageBox.exec_() in {QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel}:
             self.stackedWidget.setCurrentWidget(self.networkSettingsPage)
 
     def wifiReconnectResult(self, x):
-        self.wifiMessageBox.setStandardButtons(QtGui.QMessageBox.Ok)
+        self.wifiMessageBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
         if x is not None:
+            print("Ouput from signal " + x)
             self.wifiMessageBox.setLocalIcon('success.png')
             self.wifiMessageBox.setText('Connected, IP: ' + x)
-            self.wifiMessageBox.setStandardButtons(QtGui.QMessageBox.Ok)
+            self.wifiMessageBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
             self.ipStatus.setText(x) #sets the IP addr. in the status bar
 
         else:
@@ -969,8 +964,8 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         self.wifiIp.setText("Not connected" if not ipWifi else ipWifi)
         self.ipStatus.setText("Not connected" if not ipWifi else ipWifi)
         self.lanIp.setText("Not connected" if not ipEth else ipEth)
-        self.wifiMac.setText(getMac(ThreadRestartNetworking.WLAN))
-        self.lanMac.setText(getMac(ThreadRestartNetworking.ETH))
+        self.wifiMac.setText(getMac(ThreadRestartNetworking.WLAN).decode('utf8'))
+        self.lanMac.setText(getMac(ThreadRestartNetworking.ETH).decode('utf8'))
         self.stackedWidget.setCurrentWidget(self.networkInfoPage)
 
     def wifiSettings(self):
@@ -988,7 +983,7 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         scan_result = \
             subprocess.Popen("iwlist wlan0 scan | grep 'ESSID'", stdout=subprocess.PIPE, shell=True).communicate()[0]
         # Processing STDOUT into a dictionary that later will be converted to a json file later
-        scan_result = scan_result.split('ESSID:')  # each ssid and pass from an item in a list ([ssid pass,ssid paas])
+        scan_result = scan_result.decode('utf8').split('ESSID:')  # each ssid and pass from an item in a list ([ssid pass,ssid paas])
         scan_result = [s.strip() for s in scan_result]
         scan_result = [s.strip('"') for s in scan_result]
         scan_result = filter(None, scan_result)
@@ -1031,9 +1026,9 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
     def ethNetworkInfo(self):
         txt = subprocess.Popen("cat /etc/dhcpcd.conf", stdout=subprocess.PIPE, shell=True).communicate()[0]
 
-        reEthGlobal = r"interface\s+eth0\s?(static\s+[a-z0-9./_=\s]+\n)*"
-        reEthAddress = r"static\s+ip_address=([\d.]+)(/[\d]{1,2})?"
-        reEthGateway = r"static\s+routers=([\d.]+)(/[\d]{1,2})?"
+        reEthGlobal = b"interface\s+eth0\s?(static\s+[a-z0-9./_=\s]+\n)*"
+        reEthAddress = b"static\s+ip_address=([\d.]+)(/[\d]{1,2})?"
+        reEthGateway = b"static\s+routers=([\d.]+)(/[\d]{1,2})?"
 
         mtEthGlobal = re.search(reEthGlobal, txt)
 
@@ -1096,19 +1091,21 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
             if dialog.WarningOk(self, "Failed to change Ethernet Interface configuration."):
                 pass
 
-        signal = 'ETH_RECONNECT_RESULT'
-        self.restartEthThreadObject = ThreadRestartNetworking(ThreadRestartNetworking.ETH, signal)
+        # signal = 'ETH_RECONNECT_RESULT'
+        # self.restartEthThreadObject = ThreadRestartNetworking(ThreadRestartNetworking.ETH, signal)
+        self.restartEthThreadObject = ThreadRestartNetworking(ThreadRestartNetworking.ETH)
+        self.restartEthThreadObject.signal.connect(self.ethReconnectResult)
         self.restartEthThreadObject.start()
-        self.connect(self.restartEthThreadObject, QtCore.SIGNAL(signal), self.ethReconnectResult)
+        # self.connect(self.restartEthThreadObject, QtCore.SIGNAL(signal), self.ethReconnectResult)
         self.ethMessageBox = dialog.dialog(self,
                                            "Restarting networking, please wait...",
                                            icon="exclamation-mark.png",
-                                           buttons=QtGui.QMessageBox.Cancel)
-        if self.ethMessageBox.exec_() in {QtGui.QMessageBox.Ok, QtGui.QMessageBox.Cancel}:
+                                           buttons=QtWidgets.QMessageBox.Cancel)
+        if self.ethMessageBox.exec_() in {QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel}:
             self.stackedWidget.setCurrentWidget(self.networkSettingsPage)
 
     def ethReconnectResult(self, x):
-        self.ethMessageBox.setStandardButtons(QtGui.QMessageBox.Ok)
+        self.ethMessageBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
         if x is not None:
             self.ethMessageBox.setLocalIcon('success.png')
             self.ethMessageBox.setText('Connected, IP: ' + x)
@@ -1118,14 +1115,15 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
 
     def ethShowKeyboard(self, textbox):
         self.startKeyboard(textbox.setText, onlyNumeric=True, noSpace=True, text=str(textbox.text()))
-
     ''' ++++++++++++++++++++++++++++++++Display Settings+++++++++++++++++++++++++++++++ '''
 
     def touchCalibration(self):
         os.system('sudo /home/pi/setenv.sh')
 
+
     def showRotateDisplaySettingsPage(self):
-        txt = subprocess.Popen("cat /boot/config.txt", stdout=subprocess.PIPE, shell=True).communicate()[0]
+
+        txt = (subprocess.Popen("cat /boot/config.txt", stdout=subprocess.PIPE, shell=True).communicate()[0]).decode("utf-8")
 
         reRot = r"dtoverlay\s*=\s*waveshare35a(\s*:\s*rotate\s*=\s*([0-9]{1,3})){0,1}"
         mtRot = re.search(reRot, txt)
@@ -1138,38 +1136,61 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
 
         self.stackedWidget.setCurrentWidget(self.rotateDisplaySettingsPage)
 
-    def saveRotateDisplaySettings(self):
-        txt1 = subprocess.Popen("cat /boot/config.txt", stdout=subprocess.PIPE, shell=True).communicate()[0]
+    # def saveRotateDisplaySettings(self):
+    #     txt1 = (subprocess.Popen("cat /boot/config.txt", stdout=subprocess.PIPE, shell=True).communicate()[0]).decode("utf-8")
+    #
+    #     reRot = r"dtoverlay\s*=\s*waveshare35a(\s*:\s*rotate\s*=\s*([0-9]{1,3})){0,1}"
+    #     if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
+    #         op1 = "dtoverlay=waveshare35a,rotate=270,fps=12,speed=16000000"
+    #     else:
+    #         op1 = "dtoverlay=waveshare35a,fps=12,speed=16000000"
+    #     res1 = re.sub(reRot, op1, txt1)
+    #
+    #     try:
+    #         file1 = open("/boot/config.txt", "w")
+    #         file1.write(res1)
+    #         file1.close()
+    #     except:
+    #         if dialog.WarningOk(self, "Failed to change rotation settings", overlay=True):
+    #             return
+    #
+    #     txt2 = (subprocess.Popen("cat /usr/share/X11/xorg.conf.d/99-calibration.conf", stdout=subprocess.PIPE,
+    #                             shell=True).communicate()[0]).decode("utf-8")
+    #
+    #     reTouch = r"Option\s+\"Calibration\"\s+\"([\d\s-]+)\""
+    #     if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
+    #         op2 = "Option \"Calibration\"  \"3919 208 236 3913\""
+    #     else:
+    #         op2 = "Option \"Calibration\"  \"300 3932 3801 294\""
+    #     res2 = re.sub(reTouch, op2, txt2, flags=re.I)
+    #
+    #     try:
+    #         file2 = open("/usr/share/X11/xorg.conf.d/99-calibration.conf", "w")
+    #         file2.write(res2)
+    #         file2.close()
+    #     except:
+    #         if dialog.WarningOk(self, "Failed to change touch settings", overlay=True):
+    #             return
+    #
+    #     self.askAndReboot()
+    #     self.stackedWidget.setCurrentWidget(self.displaySettingsPage)
 
-        reRot = r"dtoverlay\s*=\s*waveshare35a(\s*:\s*rotate\s*=\s*([0-9]{1,3})){0,1}"
-        if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
-            op1 = "dtoverlay=waveshare35a:rotate=270"
-        else:
-            op1 = "dtoverlay=waveshare35a"
-        res1 = re.sub(reRot, op1, txt1)
+    def saveRotateDisplaySettings(self):
+        txt1 = (subprocess.Popen("cat /boot/config.txt", stdout=subprocess.PIPE, shell=True).communicate()[0]).decode("utf-8")
 
         try:
-            file1 = open("/boot/config.txt", "w")
-            file1.write(res1)
-            file1.close()
+            if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
+                os.system('sudo cp -f config/config.txt /boot/config.txt')
+            else:
+                os.system('sudo cp -f config/config_rot.txt /boot/config.txt')
         except:
             if dialog.WarningOk(self, "Failed to change rotation settings", overlay=True):
                 return
-
-        txt2 = subprocess.Popen("cat /etc/X11/xorg.conf.d/99-calibration.conf", stdout=subprocess.PIPE,
-                                shell=True).communicate()[0]
-
-        reTouch = r"Option\s+\"TransformationMatrix\"\s+\"([\d\s-]+)\""
-        if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
-            op2 = "Option \"TransformationMatrix\"  \"0 1 0 -1 0 1 0 0 1\""
-        else:
-            op2 = "Option \"TransformationMatrix\"  \"0 -1 1 1 0 0 0 0 1\""
-        res2 = re.sub(reTouch, op2, txt2, flags=re.I)
-
         try:
-            file2 = open("/etc/X11/xorg.conf.d/99-calibration.conf", "w")
-            file2.write(res2)
-            file2.close()
+            if self.rotateDisplaySettingsComboBox.currentIndex() == 1:
+                os.system('sudo cp -f config/99-calibration.conf /usr/share/X11/xorg.conf.d/99-calibration.conf')
+            else:
+                os.system('sudo cp -f config/99-calibration_rot.conf /usr/share/X11/xorg.conf.d/99-calibration.conf')
         except:
             if dialog.WarningOk(self, "Failed to change touch settings", overlay=True):
                 return
@@ -1227,7 +1248,6 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
         '''
         if dialog.WarningYesNo(self, "Are you sure you want to stop the print?"):
             octopiclient.cancelPrint()
-
 
     def playPauseAction(self):
         '''
@@ -1888,7 +1908,7 @@ class MainUiClass(QtGui.QMainWindow, mainGUI_pro_dual_abl.Ui_MainWindow):
             os.system('sudo rm -rf /home/pi/.octoprint/printerProfiles/*')
             os.system('sudo rm -rf /home/pi/.octoprint/scripts/gcode')
             os.system('sudo rm -rf /home/pi/.fw_logo.dat')
-            os.system('sudo cp -f config/config_Julia2018ProDualABLTouchUI.yaml /home/pi/.octoprint/config.yaml')
+            os.system('sudo cp -f config/config_JuliaProDual2022TouchUI.yaml /home/pi/.octoprint/config.yaml')
             self.tellAndReboot("Settings restored. Rebooting...")
 
     def restorePrintDefaults(self):
@@ -1935,6 +1955,18 @@ class QtWebsocket(QtCore.QThread):
     https://wiki.python.org/moin/PyQt/Threading,_Signals_and_Slots
     '''
 
+    z_home_offset_signal = QtCore.pyqtSignal(str)
+    temperatures_signal = QtCore.pyqtSignal(dict)
+    status_signal = QtCore.pyqtSignal(str)
+    print_status_signal = QtCore.pyqtSignal('PyQt_PyObject')
+    update_started_signal = QtCore.pyqtSignal(dict)
+    update_log_signal = QtCore.pyqtSignal(dict)
+    update_log_result_signal = QtCore.pyqtSignal(dict)
+    update_failed_signal = QtCore.pyqtSignal(dict)
+    connected_signal = QtCore.pyqtSignal()
+    filament_sensor_triggered_signal = QtCore.pyqtSignal(dict)
+    firmware_updater_signal = QtCore.pyqtSignal(dict)
+
     def __init__(self):
         super(QtWebsocket, self).__init__()
 
@@ -1951,8 +1983,25 @@ class QtWebsocket(QtCore.QThread):
     def run(self):
         self.ws.run_forever()
 
-    def on_message(self, ws, message):
+    def send(self, data):
+        payload = '["' + json.dumps(data).replace('"', '\\"') + '"]'
+        self.ws.send(payload)
 
+    def authenticate(self):
+        # perform passive login to retrieve username and session key for API key
+        url = 'http://' + ip + '/api/login'
+        headers = {'content-type': 'application/json', 'X-Api-Key': apiKey}
+        payload = {"passive": True}
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        data = response.json()
+
+        # prepare auth payload
+        auth_message = {"auth": "{name}:{session}".format(**data)}
+
+        # send it
+        self.send(auth_message)
+
+    def on_message(self, ws, message):
         message_type = message[0]
         if message_type == "h":
             # "heartbeat" message
@@ -1980,29 +2029,33 @@ class QtWebsocket(QtCore.QThread):
 
         if "event" in data:
             if data["event"]["type"] == "Connected":
-                self.emit(QtCore.SIGNAL('CONNECTED'))
+                self.connected_signal.emit()
+                print("connected")
         if "plugin" in data:
             if data["plugin"]["plugin"] == 'Julia2018FilamentSensor':
-                self.emit(QtCore.SIGNAL('FILAMENT_SENSOR_TRIGGERED'), data["plugin"]["data"])
+                 self.filament_sensor_triggered_signal.emit(data["plugin"]["data"])
 
             if data["plugin"]["plugin"] == 'JuliaFirmwareUpdater':
-                self.emit(QtCore.SIGNAL('FIRMWARE_UPDATER'), data["plugin"]["data"])
+                self.firmware_updater_signal.emit(data["plugin"]["data"])
 
             elif data["plugin"]["plugin"] == 'softwareupdate':
                 if data["plugin"]["data"]["type"] == "updating":
-                    self.emit(QtCore.SIGNAL('UPDATE_STARTED'), data["plugin"]["data"]["data"])
+                    self.update_started_signal.emit(data["plugin"]["data"]["data"])
                 elif data["plugin"]["data"]["type"] == "loglines":
-                    self.emit(QtCore.SIGNAL('UPDATE_LOG'), data["plugin"]["data"]["data"]["loglines"])
+                    self.update_log_signal.emit(data["plugin"]["data"]["data"]["loglines"])
                 elif data["plugin"]["data"]["type"] == "restarting":
-                    self.emit(QtCore.SIGNAL('UPDATE_LOG_RESULT'), data["plugin"]["data"]["data"]["results"])
+                    self.update_log_result_signal.emit(data["plugin"]["data"]["data"]["results"])
                 elif data["plugin"]["data"]["type"] == "update_failed":
-                    self.emit(QtCore.SIGNAL('UPDATE_FAILED'), data["plugin"]["data"]["data"])
+                    self.update_failed_signal.emit(data["plugin"]["data"]["data"])
 
         if "current" in data:
             if data["current"]["messages"]:
                 for item in data["current"]["messages"]:
-                    if 'M206' in item:
-                        self.emit(QtCore.SIGNAL('Z_HOME_OFFSET'), item[item.index('Z') + 1:].split(' ', 1)[0])
+                    if 'M206' in item: #response to M503, send current Z offset value
+                        self.z_home_offset_signal.emit(item[item.index('Z') + 1:].split(' ', 1)[0])
+                    # if 'Count' in item:  # gets the current Z value, uses it to set Z offset
+                    #     self.emit(QtCore.SIGNAL('SET_Z_HOME_OFFSET'), item[item.index('Z') + 2:].split(' ', 1)[0],
+                    #               False)
                     if 'Count' in item:  # can get thris throught the positionUpdate event
                         self.emit(QtCore.SIGNAL('SET_Z_TOOL_OFFSET'), item[item.index('Z') + 2:].split(' ', 1)[0],
                                   False)
@@ -2051,13 +2104,14 @@ class QtWebsocket(QtCore.QThread):
                     #                 'bedTarget': 0}
                     pass
 
-    def on_open(self, ws):
-        pass
+    def on_open(self,ws):
+        self.authenticate()
 
     def on_close(self, ws):
         pass
 
     def on_error(self, ws, error):
+        print(error)
         pass
 
 

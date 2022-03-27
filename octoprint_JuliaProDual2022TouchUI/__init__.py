@@ -32,7 +32,7 @@ import octoprint.plugin
 # 			self.is_running = False
 
 
-class Julia2018ProDualABLTouchUI(octoprint.plugin.StartupPlugin):
+class JuliaProDual2022TouchUI(octoprint.plugin.StartupPlugin):
     def on_after_startup(self):
         # self.resetInetrval = int(self._settings.get(["resetInetrval"]))
         self._logger.info("TouchUI Plugin Started")
@@ -41,17 +41,17 @@ class Julia2018ProDualABLTouchUI(octoprint.plugin.StartupPlugin):
 
     def get_update_information(self):
         return dict(
-            Julia2018ProDualABLTouchUI=dict(
-                displayName="Julia2018ProDualABLTouchUI",
+            JuliaProDual2022TouchUI=dict(
+                displayName="JuliaProDual2022TouchUI",
                 displayVersion=self._plugin_version,
                 # version check: github repository
                 type="github_release",
                 user="FracktalWorks",
-                repo="Julia2018ProDualABLTouchUI",
+                repo="JuliaProDual2022TouchUI",
                 current=self._plugin_version,
 
                 # update method: pip
-                pip="https://github.com/FracktalWorks/Julia2018ProDualABLTouchUI/archive/{target_version}.zip"
+                pip="https://github.com/FracktalWorks/JuliaProDual2022TouchUI/archive/{target_version}.zip"
             )
         )
 
@@ -62,7 +62,7 @@ __plugin_version__ = "0.0.16"
 
 def __plugin_load__():
     global __plugin_implementation__
-    __plugin_implementation__ = Julia2018ProDualABLTouchUI()
+    __plugin_implementation__ = JuliaProDual2022TouchUI()
 
     global __plugin_hooks__
     __plugin_hooks__ = {
