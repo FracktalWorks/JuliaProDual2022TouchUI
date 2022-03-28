@@ -1900,15 +1900,16 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
     ''' ++++++++++++++++++++++++++++++Restore Defaults++++++++++++++++++++++++++++ '''
 
     def restoreFactoryDefaults(self):
-        if dialog.WarningYesNo(self, "Are you sure you want to restore machine state to factory defaults?\nWarning: Doing so will reset printer profiles, internet config and lock the machine.",
+        if dialog.WarningYesNo(self, "Are you sure you want to restore machine state to factory defaults?\nWarning: Doing so will also reset printer profiles, WiFi & Ethernet config.",
                                overlay=True):
             os.system('sudo cp -f config/dhcpcd.conf /etc/dhcpcd.conf')
             os.system('sudo cp -f config/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf')
             os.system('sudo rm -rf /home/pi/.octoprint/users.yaml')
+            os.system('sudo cp -f config/users.yaml /home/pi/.octoprint/users.yaml')
             os.system('sudo rm -rf /home/pi/.octoprint/printerProfiles/*')
             os.system('sudo rm -rf /home/pi/.octoprint/scripts/gcode')
-            os.system('sudo rm -rf /home/pi/.fw_logo.dat')
-            os.system('sudo cp -f config/config_JuliaProDual2022TouchUI.yaml /home/pi/.octoprint/config.yaml')
+            os.system('sudo cp -f config/config.yaml /home/pi/.octoprint/config.yaml')
+            # os.system('sudo rm -rf /home/pi/.fw_logo.dat')
             self.tellAndReboot("Settings restored. Rebooting...")
 
     def restorePrintDefaults(self):
