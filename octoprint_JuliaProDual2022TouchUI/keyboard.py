@@ -1,12 +1,14 @@
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 import win_keyboard
 from functools import partial
 
 
-class Keyboard(QtGui.QDialog):
+class Keyboard(QtWidgets.QDialog):
     '''
     Class that sets up the win_keyboard UI and functionality
     '''
+
+    keyboard_signal = QtCore.pyqtSignal('PyQt_PyObject')
 
     def __init__(self, parent=None, onlyNumeric=False, noSpace=False, text=""):
         # QtGui.QDialog.__init__(self)
@@ -39,14 +41,18 @@ class Keyboard(QtGui.QDialog):
         self.mAlphaPinned = pinned
         self.ui.btCaseAlphaU.setChecked(pinned)
         self.ui.btCaseAlphaU.setFlat(pinned)
-    
+
     def appendTextAndFocus(self, text):
         # self.ui.tbDisplay.setText(self.ui.tbDisplay.toPlainText() + arg)
-        self.addText(text)
-        if self.ui.pageHolder.currentWidget() == self.ui.pgAlphaU:
-            if not self.mAlphaPinned:
-                self.ShowAlpha()
-        self.ui.tbDisplay.setFocus()
+        try:
+            self.addText(text)
+            if self.ui.pageHolder.currentWidget() == self.ui.pgAlphaU:
+                if not self.mAlphaPinned:
+                    self.ShowAlpha()
+            self.ui.tbDisplay.setFocus()
+        except Exception as e:
+            print("error Pressing Button: " + str(e))
+            self.ui = win_keyboard.Ui_WinKeyboard()
 
     def setTextFocus(self):
         self.ui.tbDisplay.moveCursor(QtGui.QTextCursor.End, QtGui.QTextCursor.MoveAnchor)
@@ -153,7 +159,7 @@ class Keyboard(QtGui.QDialog):
         self.ui.btSpaceAlphaU.clicked.connect(self.Space)
         self.ui.btSpaceNumeric.clicked.connect(self.Space)
         self.ui.btSpaceSpecial.clicked.connect(self.Space)
-        
+
         # Backspace
         self.ui.btBackspaceAlpha.clicked.connect(self.Backspace)
         self.ui.btBackspaceAlphaU.clicked.connect(self.Backspace)
@@ -173,5 +179,5 @@ class Keyboard(QtGui.QDialog):
     # Submit
     def submit(self):
         self.close()
-        self.emit(QtCore.SIGNAL('KEYBOARD'), self.ui.tbDisplay.toPlainText())
+        self.keyboard_signal.emit(self.ui.tbDisplay.toPlainText())
         self.ui.tbDisplay.setText("")

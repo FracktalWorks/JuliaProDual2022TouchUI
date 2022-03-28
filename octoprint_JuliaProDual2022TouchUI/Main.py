@@ -90,7 +90,6 @@ ip = '0.0.0.0:5000'
 apiKey = 'B508534ED20348F090B4D0AD637D3660'
 
 file_name = ''
-Development = True
 filaments = [
                 ("PLA", 200),
                 ("ABS", 220),
@@ -154,7 +153,8 @@ def getIP(interface):
         mtIp = re.search(rInetAddr, scan_result)
         if not(mt6Ip) and mtIp and len(mtIp.groups()) == 1:
             return str(mtIp.group(1))
-    except:
+    except Exception as e:
+        print(e)
         return None
 
 def getMac(interface):
@@ -212,24 +212,23 @@ buzzer = BuzzerFeedback(12)
 To get the buzzer to beep on button press
 '''
 
-OriginalPushButton = QtGui.QPushButton
-OriginalToolButton = QtGui.QToolButton
+OriginalPushButton = QtWidgets.QPushButton
+OriginalToolButton = QtWidgets.QToolButton
 
-
-class QPushButtonFeedback(QtGui.QPushButton):
+class QPushButtonFeedback(QtWidgets.QPushButton):
     def mousePressEvent(self, QMouseEvent):
         buzzer.buzz()
         OriginalPushButton.mousePressEvent(self, QMouseEvent)
 
 
-class QToolButtonFeedback(QtGui.QToolButton):
+class QToolButtonFeedback(QtWidgets.QToolButton):
     def mousePressEvent(self, QMouseEvent):
         buzzer.buzz()
         OriginalToolButton.mousePressEvent(self, QMouseEvent)
 
 
-QtGui.QToolButton = QToolButtonFeedback
-QtGui.QPushButton = QPushButtonFeedback
+QtWidgets.QToolButton = QToolButtonFeedback
+QtWidgets.QPushButton = QPushButtonFeedback
 
 
 class Image(qrcode.image.base.BaseImage):
@@ -256,14 +255,13 @@ class Image(qrcode.image.base.BaseImage):
     def save(self, stream, kind=None):
         pass
 
-
-class ClickableLineEdit(QtGui.QLineEdit):
+class ClickableLineEdit(QtWidgets.QLineEdit):
+    clicked_signal = QtCore.pyqtSignal()
     def __init__(self, parent):
-        QtGui.QLineEdit.__init__(self, parent)
-
+        QtWidgets.QLineEdit.__init__(self, parent)
     def mousePressEvent(self, QMouseEvent):
         buzzer.buzz()
-        self.emit(QtCore.SIGNAL("clicked()"))
+        self.clicked_signal.emit()
 
 
 class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
@@ -394,7 +392,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.QtSocket.connected_signal.connect(self.onServerConnected)
         self.QtSocket.filament_sensor_triggered_signal.connect(self.filamentSensorHandler)
         self.QtSocket.firmware_updater_signal.connect(self.firmwareUpdateHandler)
-        self.QtSocket.z_home_offset_signal.connect(self.getZHomeOffset)
+        #self.QtSocket.z_home_offset_signal.connect(self.getZHomeOffset)  Deprecated, uses probe offset to set initial height instead
         self.QtSocket.active_extruder_signal.connect(self.setActiveExtruder)
         self.QtSocket.z_probing_failed_signal.connect(self.showProbingFailed)
 
@@ -807,6 +805,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             message = "<span style='color: green'>{}</span>".format(message)
             message = message + "<br/><br/><span style='color: white'>Press back to continue...</span>"
             self.firmwareUpdateProgress(message, backEnabled=True)
+
 
     ''' +++++++++++++++++++++++++++++++++OTA Update+++++++++++++++++++++++++++++++++++ '''
 
@@ -1974,6 +1973,7 @@ class QtWebsocket(QtCore.QThread):
     z_probing_failed_signal = QtCore.pyqtSignal()
 
     def __init__(self):
+
         super(QtWebsocket, self).__init__()
 
         url = "ws://{}/sockjs/{:0>3d}/{}/websocket".format(
@@ -1984,7 +1984,8 @@ class QtWebsocket(QtCore.QThread):
         self.ws = websocket.WebSocketApp(url,
                                          on_message=self.on_message,
                                          on_error=self.on_error,
-                                         on_close=self.on_close)
+                                         on_close=self.on_close,
+                                         on_open=self.on_open)
 
     def run(self):
         self.ws.run_forever()
@@ -2126,7 +2127,7 @@ class ThreadSanityCheck(QtCore.QThread):
     loaded_signal = QtCore.pyqtSignal()
     startup_error_signal = QtCore.pyqtSignal()
 
-    def __init__(self, logger, virtual=False):
+    def __init__(self, logger = None, virtual=False):
         super(ThreadSanityCheck, self).__init__()
         self.MKSPort = None
         self.virtual = virtual
@@ -2171,7 +2172,6 @@ class ThreadSanityCheck(QtCore.QThread):
                 print("Not Connected!")
         if not self.shutdown_flag:
             self.loaded_signal.emit()
-
 
 class ThreadFileUpload(QtCore.QThread):
     def __init__(self, file, prnt=False):
@@ -2232,7 +2232,7 @@ class ThreadRestartNetworking(QtCore.QThread):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     # Intialize the library (must be called once before other functions).
     # Creates an object of type MainUiClass
     MainWindow = MainUiClass()

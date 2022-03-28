@@ -33,7 +33,7 @@ class AssetBundle:
                         elif c.isalpha():
                             x += (ord(c) - ord('a') + 10) * (i * 3)
         except Exception as e:
-            print(e.message)
+            print(e)
         return x
 
     def uc(self, i):
@@ -53,7 +53,7 @@ class AssetBundle:
                     f.write(str(k))
                     return True
         except Exception as e:
-            print(e.message)
+            print(e)
         return False
 
     def read_match(self):
@@ -65,7 +65,7 @@ class AssetBundle:
             else:
                 return False
         except Exception as e:
-            print(e.message)
+            print(e)
         return None
 
     def save_time(self):
@@ -76,7 +76,7 @@ class AssetBundle:
                 f.write(str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 return True
         except Exception as e:
-            print(e.message)
+            print(e)
         return None
 
     def read_time(self):
@@ -86,7 +86,7 @@ class AssetBundle:
                     x = f.readline().replace("\n", "")
                     return datetime.strptime(x, "%Y-%m-%d %H:%M:%S")
         except Exception as e:
-            print(e.message)
+            print(e)
         return datetime.now()
 
     def time_delta(self):

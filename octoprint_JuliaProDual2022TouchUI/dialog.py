@@ -1,6 +1,6 @@
 import styles
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -10,15 +10,6 @@ except AttributeError:
 
 
 def font(size=14, weight=50, bold=False, underline=False, strikeout=False):
-    '''
-    Function that configures the font
-    :param size:        px size of font
-    :param weight:      Weight of font
-    :param bold:        if bold or not
-    :param underline:
-    :param strikeout:
-    :return:            QFont object
-    '''
     font = QtGui.QFont()
     # QtGui.QInputMethodEvent
     font.setFamily(_fromUtf8("Gotham"))
@@ -30,9 +21,9 @@ def font(size=14, weight=50, bold=False, underline=False, strikeout=False):
     return font
 
 
-class Overlay(QtGui.QWidget):
+class Overlay(QtWidgets.QWidget):
     def __init__(self, parent):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_NoSystemBackground, True)
@@ -42,8 +33,8 @@ class Overlay(QtGui.QWidget):
         palette.setColor(palette.Background, QtCore.Qt.transparent)
         self.setPalette(palette)
 
-        screen = QtGui.QApplication.desktop().screenNumber(QtGui.QApplication.desktop().cursor().pos())
-        geom = QtGui.QApplication.desktop().screenGeometry(screen)
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        geom = QtWidgets.QApplication.desktop().screenGeometry(screen)
         self.setGeometry(geom)
 
     def paintEvent(self, event):
@@ -55,7 +46,8 @@ class Overlay(QtGui.QWidget):
         painter.end()
 
 
-class SelfCenteringMessageBox(QtGui.QMessageBox):
+class SelfCenteringMessageBox(QtWidgets.QMessageBox):
+
     def __init__(self, timeout=3, parent=None, overlay=False):
         self._showOverlay = overlay
         self.overlay = Overlay(None)
@@ -63,14 +55,14 @@ class SelfCenteringMessageBox(QtGui.QMessageBox):
         super(SelfCenteringMessageBox, self).__init__(None)
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
 
-        objIcon = self.findChild(QtGui.QLabel, 'qt_msgboxex_icon_label')
+        objIcon = self.findChild(QtWidgets.QLabel, 'qt_msgboxex_icon_label') 
         if objIcon:
             objIcon.setStyleSheet(styles.msgbox_icon)
             # objIcon.setMinimumSize(60, 60)
             # objIcon.setGeometry(QtCore.QRect(0, 0, 60, 60))
             # height = objIcon.height()
 
-        objLabel = self.findChild(QtGui.QLabel, 'qt_msgbox_label')
+        objLabel = self.findChild(QtWidgets.QLabel, 'qt_msgbox_label')
         if objLabel:
             objLabel.setStyleSheet(styles.msgbox_label)
             objLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
@@ -86,8 +78,8 @@ class SelfCenteringMessageBox(QtGui.QMessageBox):
         super(SelfCenteringMessageBox, self).show()
 
         frameGm = self.frameGeometry()
-        screen = QtGui.QApplication.desktop().screenNumber(QtGui.QApplication.desktop().cursor().pos())
-        centerPoint = QtGui.QApplication.desktop().screenGeometry(screen).center()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
 
@@ -102,11 +94,11 @@ class SelfCenteringMessageBox(QtGui.QMessageBox):
 def dialog(parent, text, **kwargs):
     fontSize = kwargs.get('fontSize', 14)
     icon = kwargs.get('icon', None)
-    buttons = kwargs.get('buttons', QtGui.QMessageBox.Ok)
+    buttons = kwargs.get('buttons', QtWidgets.QMessageBox.Ok)
     geometry = kwargs.get('geometry', None)
     overlay = kwargs.get('overlay', False)
 
-    choice = SelfCenteringMessageBox(parent)  # QtGui.QMessageBox()
+    choice = SelfCenteringMessageBox(parent)  # QtWidgets.QMessageBox()
     choice.setFont(font(fontSize))
     choice.setText(text)
     choice.setStandardButtons(buttons)
@@ -114,7 +106,7 @@ def dialog(parent, text, **kwargs):
 
     if icon:
         choice.setLocalIcon(icon)
-        # choice.setIcon(QtGui.QMessageBox.Information)
+        # choice.setIcon(QtWidgets.QMessageBox.Information)
 
     if geometry:
         choice.setGeometry(geometry)
@@ -126,23 +118,23 @@ def dialog(parent, text, **kwargs):
 
 
 def Ok(parent, text, **kwargs):
-    return dialog(parent, text, **kwargs).exec_() == QtGui.QMessageBox.Ok
+    return dialog(parent, text, **kwargs).exec_() == QtWidgets.QMessageBox.Ok
 
 
 def Cancel(parent, text, **kwargs):
-    return dialog(parent, text, buttons=QtGui.QMessageBox.Cancel, **kwargs).exec_() == QtGui.QMessageBox.Cancel
+    return dialog(parent, text, buttons=QtWidgets.QMessageBox.Cancel, **kwargs).exec_() == QtWidgets.QMessageBox.Cancel
 
 
 def OkCancel(parent, text, **kwargs):
-    return dialog(parent, text, buttons=QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel, **kwargs).exec_() == QtGui.QMessageBox.Cancel
+    return dialog(parent, text, buttons=QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel, **kwargs).exec_() == QtWidgets.QMessageBox.Cancel
 
 
 def Yes(parent, text, **kwargs):
-    return dialog(parent, text, buttons=QtGui.QMessageBox.Yes, **kwargs).exec_() == QtGui.QMessageBox.Yes
+    return dialog(parent, text, buttons=QtWidgets.QMessageBox.Yes, **kwargs).exec_() == QtWidgets.QMessageBox.Yes
 
 
 def YesNo(parent, text, **kwargs):
-    return dialog(parent, text, buttons=QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, **kwargs).exec_() == QtGui.QMessageBox.Yes
+    return dialog(parent, text, buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, **kwargs).exec_() == QtWidgets.QMessageBox.Yes
 
 
 def WarningOk(parent, text, **kwargs):

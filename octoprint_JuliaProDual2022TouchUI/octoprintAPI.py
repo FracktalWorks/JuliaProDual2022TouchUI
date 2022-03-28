@@ -212,23 +212,12 @@ class octoprintAPI:
 
     def pausePrint(self):
         '''
-        Pauses the current print job
+        Pauses/unpauses the current print job
 
         There must be an active print job for this to work
         '''
         url = 'http://' + self.ip + '/api/job'
-        payload = {"command": "pause", "action": "pause"}
-        headers = {'content-type': 'application/json', 'X-Api-Key': self.apiKey}
-        requests.post(url, data=json.dumps(payload), headers=headers)
-
-    def resumePrint(self):
-        '''
-        Resume the current print job
-
-        There must be an active print job for this to work
-        '''
-        url = 'http://' + self.ip + '/api/job'
-        payload = {"command": "pause", "action": "resume"}
+        payload = {'command': 'pause'}
         headers = {'content-type': 'application/json', 'X-Api-Key': self.apiKey}
         requests.post(url, data=json.dumps(payload), headers=headers)
 
@@ -412,7 +401,7 @@ class octoprintAPI:
             payload['z'] = z
         if speed != None:
             payload['speed'] = speed
-        print "jog called" + str(payload)
+        print ("jog called" + str(payload))
         headers = {'content-type': 'application/json', 'X-Api-Key': self.apiKey}
         requests.post(url, data=json.dumps(payload), headers=headers)
 
