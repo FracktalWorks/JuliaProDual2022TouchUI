@@ -1,3 +1,5 @@
 include README.md
 recursive-include octoprint_Julia2018ProDualABLTouchUI/templates *
 recursive-include octoprint_Julia2018ProDualABLTouchUI/config *
+include versioneer.py
+include octoprint_JuliaProDual2022TouchUI/_version.py

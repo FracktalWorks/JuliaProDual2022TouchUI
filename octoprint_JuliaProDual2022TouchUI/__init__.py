@@ -1,7 +1,10 @@
 # coding=utf-8
 from __future__ import absolute_import
+__version__ = get_versions()['version']
+del get_versions
 
 import octoprint.plugin
+
 # import time
 # import subprocess
 # from threading import Timer
@@ -57,7 +60,8 @@ class JuliaProDual2022TouchUI(octoprint.plugin.StartupPlugin):
 
 
 __plugin_name__ = "Julia Pro Dual ABL Touch UI"
-__plugin_version__ = "0.0.16"
+__plugin_version__ = __version__
+__plugin_pythoncompat__ = ">=3,<4"
 
 
 def __plugin_load__():

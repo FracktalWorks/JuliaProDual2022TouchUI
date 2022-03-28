@@ -382,8 +382,8 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         '''
 
         #--Dual Caliberation Addition--
-        self.connect(self.QtSocket, QtCore.SIGNAL('SET_Z_TOOL_OFFSET'), self.setZToolOffset)
-        self.connect(self.QtSocket, QtCore.SIGNAL('Z_PROBE_OFFSET'), self.updateEEPROMProbeOffset)
+        self.QtSocket.set_z_tool_offset_signal.connect(self.setZToolOffset)
+        self.QtSocket.z_probe_offset_signal.connect(self.updateEEPROMProbeOffset)
         self.QtSocket.temperatures_signal.connect(self.updateTemperature)
         self.QtSocket.status_signal.connect(self.updateStatus)
         self.QtSocket.print_status_signal.connect(self.updatePrintStatus)
@@ -394,9 +394,9 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.QtSocket.connected_signal.connect(self.onServerConnected)
         self.QtSocket.filament_sensor_triggered_signal.connect(self.filamentSensorHandler)
         self.QtSocket.firmware_updater_signal.connect(self.firmwareUpdateHandler)
-        self.connect(self.QtSocket, QtCore.SIGNAL('Z_PROBING_FAILED'), self.showProbingFailed)
         self.QtSocket.z_home_offset_signal.connect(self.getZHomeOffset)
-        self.connect(self.QtSocket, QtCore.SIGNAL('ACTIVE_EXTRUDER'), self.setActiveExtruder)
+        self.QtSocket.active_extruder_signal.connect(self.setActiveExtruder)
+        self.QtSocket.z_probing_failed_signal.connect(self.showProbingFailed)
 
         # Text Input events
         self.wifiPasswordLineEdit.clicked_signal.connect(lambda: self.startKeyboard(self.wifiPasswordLineEdit.setText))
@@ -1716,7 +1716,8 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
 
         #TODO can make this simpler, asset the offset value to string float to begin with instead of doing confitionals
         '''
-        self.currentZPosition = offset #gets the current z position, used to set new tool offsets. clean this shit up.
+        self.currentZPosition = offset #gets the current z position, used to set new tool offsets.
+        # clean this shit up.
         #fuck you past vijay for not cleaning this up
         if self.setNewToolZOffsetFromCurrentZBool:
             newToolOffsetZ = float(self.toolOffsetZ) - float(self.currentZPosition)
@@ -1966,6 +1967,11 @@ class QtWebsocket(QtCore.QThread):
     connected_signal = QtCore.pyqtSignal()
     filament_sensor_triggered_signal = QtCore.pyqtSignal(dict)
     firmware_updater_signal = QtCore.pyqtSignal(dict)
+    set_z_tool_offset_signal = QtCore.pyqtSignal(str,bool)
+    tool_offset_signal = QtCore.pyqtSignal(str)
+    active_extruder_signal = QtCore.pyqtSignal(str)
+    z_probe_offset_signal = QtCore.pyqtSignal(str)
+    z_probing_failed_signal = QtCore.pyqtSignal()
 
     def __init__(self):
         super(QtWebsocket, self).__init__()
@@ -2057,26 +2063,26 @@ class QtWebsocket(QtCore.QThread):
                     #     self.emit(QtCore.SIGNAL('SET_Z_HOME_OFFSET'), item[item.index('Z') + 2:].split(' ', 1)[0],
                     #               False)
                     if 'Count' in item:  # can get thris throught the positionUpdate event
-                        self.emit(QtCore.SIGNAL('SET_Z_TOOL_OFFSET'), item[item.index('Z') + 2:].split(' ', 1)[0],
+                        self.set_z_tool_offset_signal.emit(item[item.index('Z') + 2:].split(' ', 1)[0],
                                   False)
                     if 'M218' in item:
-                        self.emit(QtCore.SIGNAL('TOOL_OFFSET'), item[item.index('M218'):])
+                        self.tool_offset_signal.emit(item[item.index('M218'):])
                     if 'Active Extruder' in item:  # can get thris throught the positionUpdate event
-                        self.emit(QtCore.SIGNAL('ACTIVE_EXTRUDER'), item[-1])
+                        self.active_extruder_signal.emit(item[-1])
                     
                     if 'M851' in item:
-                        self.emit(QtCore.SIGNAL('Z_PROBE_OFFSET'), item[item.index('Z') + 1:].split(' ', 1)[0])
+                        self.self.z_probe_offset_signal.emit(item[item.index('Z') + 1:].split(' ', 1)[0])
                     if 'PROBING_FAILED' in item:
-                        self.emit(QtCore.SIGNAL('Z_PROBING_FAILED'))
+                        self.z_probing_failed_signal.emit()
 
             if data["current"]["state"]["text"]:
-                self.emit(QtCore.SIGNAL('STATUS'), data["current"]["state"]["text"])
+                self.status_signal.emit(data["current"]["state"]["text"])
 
             fileInfo = {"job": data["current"]["job"], "progress": data["current"]["progress"]}
             if fileInfo['job']['file']['name'] is not None:
-                self.emit(QtCore.SIGNAL('PRINT_STATUS'), fileInfo)
+                self.print_status_signal.emit(fileInfo)
             else:
-                self.emit(QtCore.SIGNAL('PRINT_STATUS'), None)
+                self.print_status_signal.emit(None)
 
             def temp(data, tool, temp):
                 try:
@@ -2094,7 +2100,7 @@ class QtWebsocket(QtCore.QThread):
                                     'tool1Target': temp(data, "tool1", "target"),
                                     'bedActual': temp(data, "bed", "actual"),
                                     'bedTarget': temp(data, "bed", "target")}
-                    self.emit(QtCore.SIGNAL('TEMPERATURES'), temperatures)
+                    self.temperatures_signal.emit(temperatures)
                 except KeyError:
                     # temperatures = {'tool0Actual': 0,
                     #                 'tool0Target': 0,
@@ -2116,15 +2122,20 @@ class QtWebsocket(QtCore.QThread):
 
 
 class ThreadSanityCheck(QtCore.QThread):
+
+    loaded_signal = QtCore.pyqtSignal()
+    startup_error_signal = QtCore.pyqtSignal()
+
     def __init__(self, logger, virtual=False):
         super(ThreadSanityCheck, self).__init__()
         self.MKSPort = None
         self.virtual = virtual
-        self._logger = logger
+        if not Development:
+            self._logger = logger
 
     def run(self):
         global octopiclient
-        shutdown_flag = False
+        self.shutdown_flag = False
         # get the first value of t1 (runtime check)
         uptime = 0
         # keep trying untill octoprint connects
@@ -2132,36 +2143,34 @@ class ThreadSanityCheck(QtCore.QThread):
             # Start an object instance of octopiAPI
             try:
                 if (uptime > 30):
-                    shutdown_flag = True
-                    self.emit(QtCore.SIGNAL('STARTUP_ERROR'))
+                    self.shutdown_flag = True
+                    self.startup_error_signal.emit()
                     break
                 octopiclient = octoprintAPI(ip, apiKey)
                 if not self.virtual:
                     result = subprocess.Popen("dmesg | grep 'ttyUSB'", stdout=subprocess.PIPE, shell=True).communicate()[0]
-                    result = result.split('\n')  # each ssid and pass from an item in a list ([ssid pass,ssid paas])
+                    result = result.split(b'\n')  # each ssid and pass from an item in a list ([ssid pass,ssid paas])
+                    print(result)
                     result = [s.strip() for s in result]
                     for line in result:
-                        if 'ch341-uart' in line:
-                            self.MKSPort = line[line.index('ttyUSB'):line.index('ttyUSB') + 7]
-                            print self.MKSPort
-                        elif 'FTDI' in line:
-                            self.MKSPort = line[line.index('ttyUSB'):line.index('ttyUSB') + 7]
-                            print self.MKSPort
+                        if b'FTDI' in line:
+                            self.MKSPort = line[line.index(b'ttyUSB'):line.index(b'ttyUSB') + 7].decode('utf-8')
+                            print(self.MKSPort)
+                        if b'ch34' in line:
+                            self.MKSPort = line[line.index(b'ttyUSB'):line.index(b'ttyUSB') + 7].decode('utf-8')
+                            print(self.MKSPort)
 
-
-                if not self.MKSPort:
-                    octopiclient.connectPrinter(port="VIRTUAL", baudrate=115200)
-                else:
-                    octopiclient.connectPrinter(port="/dev/" + self.MKSPort, baudrate=115200)
+                    if not self.MKSPort:
+                        octopiclient.connectPrinter(port="VIRTUAL", baudrate=115200)
+                    else:
+                        octopiclient.connectPrinter(port="/dev/" + self.MKSPort, baudrate=115200)
                 break
             except Exception as e:
                 time.sleep(1)
                 uptime = uptime + 1
-                # print("Not Connected!")
-                print(e.message)
-                self._logger.error("ThreadSanityCheck: " + str(e.message))
-        if not shutdown_flag:
-            self.emit(QtCore.SIGNAL('LOADED'))
+                print("Not Connected!")
+        if not self.shutdown_flag:
+            self.loaded_signal.emit()
 
 
 class ThreadFileUpload(QtCore.QThread):
@@ -2184,37 +2193,41 @@ class ThreadFileUpload(QtCore.QThread):
         else:
             octopiclient.uploadGcode(file=self.file, select=False, prnt=False)
 
-
-
 class ThreadRestartNetworking(QtCore.QThread):
     WLAN = "wlan0"
     ETH = "eth0"
+    signal = QtCore.pyqtSignal('PyQt_PyObject')
 
-    def __init__(self, interface, signal):
+    def __init__(self, interface):
         super(ThreadRestartNetworking, self).__init__()
         self.interface = interface
-        self.signal = signal
-
     def run(self):
         self.restart_interface()
         attempt = 0
         while attempt < 3:
+            # print(getIP(self.interface))
             if getIP(self.interface):
-                self.emit(QtCore.SIGNAL(self.signal), getIP(self.interface))
+                self.signal.emit(getIP(self.interface))
                 break
             else:
                 attempt += 1
-                time.sleep(1)
+                time.sleep(5)
         if attempt >= 3:
-            self.emit(QtCore.SIGNAL(self.signal), None)
+            self.signal.emit(None)
 
     def restart_interface(self):
         '''
         restars wlan0 wireless interface to use new changes in wpa_supplicant.conf file
         :return:
         '''
-        subprocess.call(["ifdown", "--force", self.interface], shell=False)
-        subprocess.call(["ifup", "--force", self.interface], shell=False)
+        if self.interface == "wlan0":
+            subprocess.call(["wpa_cli","-i",  self.interface, "reconfigure"], shell=False)
+        if self.interface == "eth0":
+            subprocess.call(["ifconfig",  self.interface, "down"], shell=False)
+            time.sleep(1)
+            subprocess.call(["ifconfig", self.interface, "up"], shell=False)
+        # subprocess.call(["ifdown", "--force", self.interface], shell=False)
+        # subprocess.call(["ifup", "--force", self.interface], shell=False)
         time.sleep(5)
 
 
