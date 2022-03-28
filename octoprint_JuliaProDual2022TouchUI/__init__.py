@@ -59,7 +59,7 @@ class JuliaProDual2022TouchUI(octoprint.plugin.StartupPlugin):
         )
 
 
-__plugin_name__ = "Julia Pro Dual ABL Touch UI"
+__plugin_name__ = "Julia Pro Dual 2022 Touch UI"
 __plugin_version__ = __version__
 __plugin_pythoncompat__ = ">=3,<4"
 
