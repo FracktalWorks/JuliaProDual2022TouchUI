@@ -1,9 +1,11 @@
 # coding=utf-8
 from __future__ import absolute_import
-__version__ = get_versions()['version']
-del get_versions
 
 import octoprint.plugin
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
 
 # import time
 # import subprocess
