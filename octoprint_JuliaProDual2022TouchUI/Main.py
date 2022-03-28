@@ -2075,7 +2075,7 @@ class QtWebsocket(QtCore.QThread):
                         self.active_extruder_signal.emit(item[-1])
                     
                     if 'M851' in item:
-                        self.self.z_probe_offset_signal.emit(item[item.index('Z') + 1:].split(' ', 1)[0])
+                        self.z_probe_offset_signal.emit(item[item.index('Z') + 1:].split(' ', 1)[0])
                     if 'PROBING_FAILED' in item:
                         self.z_probing_failed_signal.emit()
 
