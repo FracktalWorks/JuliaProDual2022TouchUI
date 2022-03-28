@@ -1893,7 +1893,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         starts the keyboard screen for entering Password
         '''
         keyBoardobj = keyboard.Keyboard(onlyNumeric=onlyNumeric, noSpace=noSpace, text=text)
-        self.connect(keyBoardobj, QtCore.SIGNAL('KEYBOARD'), returnFn)
+        keyBoardobj.keyboard_signal.connect(returnFn)
         keyBoardobj.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         keyBoardobj.show()
 
