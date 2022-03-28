@@ -342,6 +342,8 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             self.sanityCheck.start()
             self.sanityCheck.loaded_signal.connect(self.proceed)
             self.sanityCheck.startup_error_signal.connect(self.handleStartupError)
+            self.setNewToolZOffsetFromCurrentZBool = False
+            self.setActiveExtruder(0)
 
 
             for spinbox in self.findChildren(QtWidgets.QSpinBox):
