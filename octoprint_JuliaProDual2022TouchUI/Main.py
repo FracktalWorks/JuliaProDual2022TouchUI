@@ -1323,7 +1323,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
                 self.filePrintTimeSelected.setText('-')
             try:
                 self.filamentVolumeSelected.setText(
-                    ("%.2f cm" % file['gcodeAnalysis']['filament']['tool0']['volume']) + unichr(179))
+                    ("%.2f cm" % file['gcodeAnalysis']['filament']['tool0']['volume']) + chr(179))
             except KeyError:
                 self.filamentVolumeSelected.setText('-')
 
@@ -1348,7 +1348,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             else:
                 self.printPreviewSelected.setPixmap(QtGui.QPixmap(_fromUtf8("templates/img/thumbnail.png")))
         except:
-            print "Log: Nothing Selected"
+            print ("Log: Nothing Selected")
             # Set image fot print preview:
             # self.printPreviewSelected.setPixmap(QtGui.QPixmap(_fromUtf8("templates/img/thumbnail.png")))
             # print self.fileListWidget.currentItem().text().replace(".gcode","")
@@ -1375,7 +1375,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             else:
                 self.printPreviewSelectedUSB.setPixmap(QtGui.QPixmap(_fromUtf8("templates/img/thumbnail.png")))
         except:
-            print "Log: Nothing Selected"
+            print ("Log: Nothing Selected")
 
             # Set Image from USB
 
@@ -1625,10 +1625,10 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         # self.toolToggleTemperatureButton.setText(
         #     "1") if self.toolToggleTemperatureButton.isChecked() else self.toolToggleTemperatureButton.setText("0")
         if self.toolToggleTemperatureButton.isChecked():
-            print "extruder 1 Temperature"
+            print ("extruder 1 Temperature")
             self.toolTempSpinBox.setProperty("value", float(self.tool1TargetTemperature.text()))
         else:
-            print "extruder 0 Temperature"
+            print ("extruder 0 Temperature")
             self.toolTempSpinBox.setProperty("value", float(self.tool0TargetTemperature.text()))
 
     def setActiveExtruder(self, activeNozzle):
