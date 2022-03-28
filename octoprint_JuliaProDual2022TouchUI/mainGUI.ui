@@ -2518,7 +2518,7 @@ QScrollBar::down-arrow:vertical {
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>398</width>
+         <width>461</width>
          <height>630</height>
         </rect>
        </property>
@@ -3189,7 +3189,7 @@ border: 1px solid black;
 }
 
 QComboBox::item {
-	color: rgb(255, 255, 255);
+	color: rgb(0, 0, 0);
 }
 
 QComboBox:editable {
@@ -4416,7 +4416,7 @@ border: 1px solid black;
 }
 
 QComboBox::item {
-	color: rgb(255, 255, 255);
+	color: rgb(0, 0, 0);
 }
 
 QComboBox:editable {
@@ -5889,6 +5889,9 @@ QDoubleSpinBox::down-button:pressed {
 
 </string>
       </property>
+      <property name="frame">
+       <bool>false</bool>
+      </property>
       <property name="readOnly">
        <bool>false</bool>
       </property>
@@ -6100,6 +6103,9 @@ QDoubleSpinBox::down-button:pressed {
 
 </string>
       </property>
+      <property name="frame">
+       <bool>false</bool>
+      </property>
       <property name="readOnly">
        <bool>false</bool>
       </property>
@@ -6279,6 +6285,9 @@ QDoubleSpinBox::down-button:pressed {
 }
 
 </string>
+      </property>
+      <property name="frame">
+       <bool>false</bool>
       </property>
       <property name="readOnly">
        <bool>false</bool>
@@ -7295,6 +7304,9 @@ QDoubleSpinBox::down-button:pressed {
 }
 
 </string>
+      </property>
+      <property name="frame">
+       <bool>false</bool>
       </property>
       <property name="readOnly">
        <bool>false</bool>
@@ -9367,7 +9379,7 @@ QTabBar:focus {
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -10087,6 +10099,9 @@ QSpinBox::down-button:pressed {
 
 </string>
         </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
         <property name="readOnly">
          <bool>false</bool>
         </property>
@@ -10180,6 +10195,9 @@ QSpinBox::down-button:pressed {
 }
 
 </string>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
         </property>
         <property name="readOnly">
          <bool>false</bool>
@@ -12045,20 +12063,16 @@ QPushButton:default {
        <string notr="true"> QScrollBar:vertical {
      border: 1px solid black;
 border-radius: 5px;
-    background-color: rgb(40,40,40);
-     width: 60px;
-     margin: 67px 0 67px 0;
+	background-color: rgb(40,40,40);
+     width: 80px;
+     margin: 70px 0 70px 0;
  }
-
-/* Sets up the color and height of handle */
-QScrollBar::handle:vertical {
+ QScrollBar::handle:vertical {
 border-radius: 5px;
 background: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0.188, stop:0 rgba(180, 180, 180, 255), stop:1 rgba(255, 255, 255, 255));
-min-height: 7px;
-}
-
-
-QScrollBar::add-line:vertical {
+min-height: 20px;
+ }
+ QScrollBar::add-line:vertical {
      border: 1px solid black;
 background: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0.188, stop:0 rgba(180, 180, 180, 255), stop:1 rgba(255, 255, 255, 255));
      height:65px;
@@ -12089,10 +12103,9 @@ QScrollBar::down-arrow:vertical {
  padding: 5px;
  }
 
-/* need this to get rid of crosshatching on scrollbar background */
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-background: none;
-}
+ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+     background: none;
+ }
 
 QComboBox {
 border: 1px solid black;
@@ -12102,7 +12115,7 @@ border: 1px solid black;
 }
 
 QComboBox::item {
-	color: rgb(255, 255, 255);
+	color: rgb(0, 0, 0);
 }
 
 QComboBox:editable {
@@ -12135,12 +12148,7 @@ width: 30px;
 height: 30px;
 
 }
-
-
-QComboBox QAbstractItemView {
-    selection-background-color: rgb(40, 40, 40);
-    background: white;
-}</string>
+</string>
       </property>
       <property name="editable">
        <bool>false</bool>

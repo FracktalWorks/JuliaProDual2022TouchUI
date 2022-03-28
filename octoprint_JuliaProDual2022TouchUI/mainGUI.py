@@ -1390,7 +1390,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 398, 630))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 461, 630))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setContentsMargins(0, 0, 3, 0)
@@ -1807,7 +1807,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "QComboBox::item {\n"
-"    color: rgb(255, 255, 255);\n"
+"    color: rgb(0, 0, 0);\n"
 "}\n"
 "\n"
 "QComboBox:editable {\n"
@@ -2548,7 +2548,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "QComboBox::item {\n"
-"    color: rgb(255, 255, 255);\n"
+"    color: rgb(0, 0, 0);\n"
 "}\n"
 "\n"
 "QComboBox:editable {\n"
@@ -3416,6 +3416,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.toolOffsetXDoubleSpinBox.setFrame(False)
         self.toolOffsetXDoubleSpinBox.setReadOnly(False)
         self.toolOffsetXDoubleSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.toolOffsetXDoubleSpinBox.setAccelerated(True)
@@ -3555,6 +3556,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.toolOffsetYDoubleSpinBox.setFrame(False)
         self.toolOffsetYDoubleSpinBox.setReadOnly(False)
         self.toolOffsetYDoubleSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.toolOffsetYDoubleSpinBox.setAccelerated(True)
@@ -3673,6 +3675,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.toolOffsetZDoubleSpinBox.setFrame(False)
         self.toolOffsetZDoubleSpinBox.setReadOnly(False)
         self.toolOffsetZDoubleSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.toolOffsetZDoubleSpinBox.setAccelerated(True)
@@ -4269,6 +4272,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.nozzleOffsetDoubleSpinBox.setFrame(False)
         self.nozzleOffsetDoubleSpinBox.setReadOnly(False)
         self.nozzleOffsetDoubleSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.nozzleOffsetDoubleSpinBox.setAccelerated(True)
@@ -5779,6 +5783,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.toolTempSpinBox.setFrame(False)
         self.toolTempSpinBox.setReadOnly(False)
         self.toolTempSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.toolTempSpinBox.setAccelerated(True)
@@ -5847,6 +5852,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "")
+        self.bedTempSpinBox.setFrame(False)
         self.bedTempSpinBox.setReadOnly(False)
         self.bedTempSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.UpDownArrows)
         self.bedTempSpinBox.setAccelerated(True)
@@ -6890,19 +6896,15 @@ class Ui_MainWindow(object):
 "     border: 1px solid black;\n"
 "border-radius: 5px;\n"
 "    background-color: rgb(40,40,40);\n"
-"     width: 60px;\n"
-"     margin: 67px 0 67px 0;\n"
+"     width: 80px;\n"
+"     margin: 70px 0 70px 0;\n"
 " }\n"
-"\n"
-"/* Sets up the color and height of handle */\n"
-"QScrollBar::handle:vertical {\n"
+" QScrollBar::handle:vertical {\n"
 "border-radius: 5px;\n"
 "background: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0.188, stop:0 rgba(180, 180, 180, 255), stop:1 rgba(255, 255, 255, 255));\n"
-"min-height: 7px;\n"
-"}\n"
-"\n"
-"\n"
-"QScrollBar::add-line:vertical {\n"
+"min-height: 20px;\n"
+" }\n"
+" QScrollBar::add-line:vertical {\n"
 "     border: 1px solid black;\n"
 "background: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0.188, stop:0 rgba(180, 180, 180, 255), stop:1 rgba(255, 255, 255, 255));\n"
 "     height:65px;\n"
@@ -6933,10 +6935,9 @@ class Ui_MainWindow(object):
 " padding: 5px;\n"
 " }\n"
 "\n"
-"/* need this to get rid of crosshatching on scrollbar background */\n"
-"QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {\n"
-"background: none;\n"
-"}\n"
+" QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {\n"
+"     background: none;\n"
+" }\n"
 "\n"
 "QComboBox {\n"
 "border: 1px solid black;\n"
@@ -6946,7 +6947,7 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "QComboBox::item {\n"
-"    color: rgb(255, 255, 255);\n"
+"    color: rgb(0, 0, 0);\n"
 "}\n"
 "\n"
 "QComboBox:editable {\n"
@@ -6979,12 +6980,7 @@ class Ui_MainWindow(object):
 "height: 30px;\n"
 "\n"
 "}\n"
-"\n"
-"\n"
-"QComboBox QAbstractItemView {\n"
-"    selection-background-color: rgb(40, 40, 40);\n"
-"    background: white;\n"
-"}")
+"")
         self.changeFilamentComboBox.setEditable(False)
         self.changeFilamentComboBox.setMaxVisibleItems(8)
         self.changeFilamentComboBox.setIconSize(QtCore.QSize(30, 30))
@@ -7404,7 +7400,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.stackedWidget.setCurrentIndex(0)
-        self.controlTabWidget.setCurrentIndex(3)
+        self.controlTabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

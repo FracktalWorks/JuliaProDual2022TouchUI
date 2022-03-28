@@ -397,6 +397,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         #self.QtSocket.z_home_offset_signal.connect(self.getZHomeOffset)  Deprecated, uses probe offset to set initial height instead
         self.QtSocket.active_extruder_signal.connect(self.setActiveExtruder)
         self.QtSocket.z_probing_failed_signal.connect(self.showProbingFailed)
+        self.QtSocket.tool_offset_signal.connect(self.getToolOffset)
 
         # Text Input events
         self.wifiPasswordLineEdit.clicked_signal.connect(lambda: self.startKeyboard(self.wifiPasswordLineEdit.setText))
@@ -448,8 +449,8 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.toolOffsetZSetButton.pressed.connect(self.setToolOffsetZ)
         self.toolOffsetXYBackButton.pressed.connect(lambda: self.stackedWidget.setCurrentWidget(self.calibratePage))
         self.toolOffsetZBackButton.pressed.connect(lambda: self.stackedWidget.setCurrentWidget(self.calibratePage))
-        self.toolOffsetXYButton.pressed.connect(self.toolOffsetXY)
-        self.toolOffsetZButton.pressed.connect(self.toolOffsetZ)
+        self.toolOffsetXYButton.pressed.connect(self.updateToolOffsetXY)
+        self.toolOffsetZButton.pressed.connect(self.updateToolOffsetZ)
 
         # PrintLocationScreen
         self.printLocationScreenBackButton.pressed.connect(lambda: self.stackedWidget.setCurrentWidget(self.MenuPage))
@@ -1202,6 +1203,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
     ''' +++++++++++++++++++++++++++++++++Change Filament+++++++++++++++++++++++++++++++ '''
 
     def unloadFilament(self):
+        #Update
         if self.changeFilamentComboBox.findText("Loaded Filament") == -1:
             octopiclient.setToolTemperature({"tool1": filaments[str(
                 self.changeFilamentComboBox.currentText())]}) if self.activeExtruder == 1 else octopiclient.setToolTemperature(
@@ -1214,6 +1216,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.loadFlag = False
 
     def loadFilament(self):
+        #Update
         if self.changeFilamentComboBox.findText("Loaded Filament") == -1:
             octopiclient.setToolTemperature({"tool1": filaments[str(
                 self.changeFilamentComboBox.currentText())]}) if self.activeExtruder == 1 else octopiclient.setToolTemperature(
@@ -1229,7 +1232,9 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.stackedWidget.setCurrentWidget(self.changeFilamentPage)
         self.changeFilamentComboBox.clear()
         self.changeFilamentComboBox.addItems(filaments.keys())
-        if self.tool0TargetTemperature > 0 and self.printerStatusText in ["Printing","Paused"]:
+        #Update
+        print(self.tool0TargetTemperature)
+        if self.tool0TargetTemperature  and self.printerStatusText in ["Printing","Paused"]:
             self.changeFilamentComboBox.addItem("Loaded Filament")
             index = self.changeFilamentComboBox.findText("Loaded Filament")
             if index >= 0 :
@@ -1764,11 +1769,11 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         octopiclient.gcode(command='M503')
         self.stackedWidget.setCurrentWidget(self.nozzleOffsetPage)
 
-    def toolOffsetXY(self):
+    def updateToolOffsetXY(self):
         octopiclient.gcode(command='M503')
         self.stackedWidget.setCurrentWidget(self.toolOffsetXYPage)
 
-    def toolOffsetZ(self):
+    def updateToolOffsetZ(self):
         octopiclient.gcode(command='M503')
         self.stackedWidget.setCurrentWidget(self.toolOffsetZpage)
 
@@ -1910,6 +1915,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             os.system('sudo cp -f config/users.yaml /home/pi/.octoprint/users.yaml')
             os.system('sudo rm -rf /home/pi/.octoprint/printerProfiles/*')
             os.system('sudo rm -rf /home/pi/.octoprint/scripts/gcode')
+            os.system('sudo rm -rf /home/pi/.octoprint/print_restore.json')
             os.system('sudo cp -f config/config.yaml /home/pi/.octoprint/config.yaml')
             # os.system('sudo rm -rf /home/pi/.fw_logo.dat')
             self.tellAndReboot("Settings restored. Rebooting...")
