@@ -1294,7 +1294,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         self.stackedWidget.setCurrentWidget(self.fileListUSBPage)
         self.fileListWidgetUSB.clear()
         files = subprocess.Popen("ls /media/usb0 | grep gcode", stdout=subprocess.PIPE, shell=True).communicate()[0]
-        files = files.split('\n')
+        files = files.decode('utf-8').split('\n')
         files = filter(None, files)
         # for item in files:
         #     self.fileListWidgetUSB.addItem(item)
@@ -1577,9 +1577,9 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             self.changeFilamentButton.setDisabled(True)
             self.menuCalibrateButton.setDisabled(True)
             self.menuPrintButton.setDisabled(True)
-            if not self.__timelapse_enabled:
-                octopiclient.cancelPrint()
-                self.coolDownAction()
+            # if not self.__timelapse_enabled:
+            #     octopiclient.cancelPrint()
+            #     self.coolDownAction()
 
         elif status == "Paused":
             self.playPauseButton.setChecked(False)
