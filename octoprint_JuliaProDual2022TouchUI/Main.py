@@ -1265,7 +1265,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         elif self.printerStatusText == "Printing":
             octopiclient.pausePrint()
         elif self.printerStatusText == "Paused":
-            octopiclient.resumePrint()
+            octopiclient.pausePrint()
 
     def fileListLocal(self):
         '''
