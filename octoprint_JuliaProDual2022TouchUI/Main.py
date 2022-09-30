@@ -704,6 +704,7 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
             return
 
         triggered_extruder0 = False
+        triggered_extruder1 = False
         triggered_door = False
         pause_print = False
 
@@ -712,15 +713,24 @@ class MainUiClass(QtWidgets.QMainWindow, mainGUI.Ui_MainWindow):
         elif 'extruder0' in data:
             triggered_extruder0 = data["extruder0"] == 0
 
+        if 'filament2' in data:
+            triggered_extruder1 = data["filament2"] == 0
+        elif 'extruder0' in data:
+            triggered_extruder1 = data["extruder1"] == 0
+
         if 'door' in data:
             triggered_door = data["door"] == 0
         if 'pause_print' in data:
             pause_print = data["pause_print"]
 
-        #Update
         if triggered_extruder0 and self.stackedWidget.currentWidget() not in [self.changeFilamentPage, self.changeFilamentProgressPage,
                                   self.changeFilamentExtrudePage, self.changeFilamentRetractPage]:
             if dialog.WarningOk(self, "Filament outage in Extruder 0"):
+                pass
+
+        if triggered_extruder1 and self.stackedWidget.currentWidget() not in [self.changeFilamentPage, self.changeFilamentProgressPage,
+                                  self.changeFilamentExtrudePage, self.changeFilamentRetractPage]:
+            if dialog.WarningOk(self, "Filament outage in Extruder 1"):
                 pass
 
         if triggered_door:
